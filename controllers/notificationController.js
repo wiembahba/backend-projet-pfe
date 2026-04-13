@@ -14,7 +14,7 @@ const createTransporter = () => {
 exports.createNotification = async (userId, type, titre, message, lien = null) => {
     try {
         // Vérifier si le type de notification est activé
-        const [config] = await db.promise().query(
+        const [config] = await db.query(
             "SELECT valeur FROM notification_configs WHERE cle = ?",
             [`${type}_enabled`]
         );
@@ -25,7 +25,7 @@ exports.createNotification = async (userId, type, titre, message, lien = null) =
         }
         
         // Vérifier les préférences utilisateur
-        const [pref] = await db.promise().query(
+        const [pref] = await db.query(
             "SELECT canal, est_actif FROM user_notification_preferences WHERE user_id = ? AND type = ?",
             [userId, type]
         );
@@ -33,7 +33,7 @@ exports.createNotification = async (userId, type, titre, message, lien = null) =
         const canal = (pref.length > 0 && pref[0].est_actif) ? pref[0].canal : 'interne';
         
         // Insérer la notification
-        const [result] = await db.promise().query(
+        const [result] = await db.query(
             `INSERT INTO notifications (user_id, type, titre, message, lien) 
              VALUES (?, ?, ?, ?, ?)`,
             [userId, type, titre, message, lien]
@@ -56,7 +56,7 @@ exports.createNotification = async (userId, type, titre, message, lien = null) =
 // ===================== ENVOYER EMAIL =====================
 exports.envoyerEmailNotification = async (userId, titre, message, lien) => {
     try {
-        const [user] = await db.promise().query(
+        const [user] = await db.query(
             "SELECT email, nom_complet FROM users WHERE id = ?",
             [userId]
         );
@@ -96,14 +96,14 @@ exports.getMesNotifications = async (req, res) => {
     try {
         const userId = req.user.id;
         
-        const [notifications] = await db.promise().query(`
+        const [notifications] = await db.query(`
             SELECT * FROM notifications 
             WHERE user_id = ? 
             ORDER BY created_at DESC 
             LIMIT 50
         `, [userId]);
         
-        const [nonLues] = await db.promise().query(`
+        const [nonLues] = await db.query(`
             SELECT COUNT(*) as count FROM notifications 
             WHERE user_id = ? AND est_lue = FALSE
         `, [userId]);
@@ -126,7 +126,7 @@ exports.marquerCommeLue = async (req, res) => {
         const notificationId = req.params.id;
         const userId = req.user.id;
         
-        const [result] = await db.promise().query(
+        const [result] = await db.query(
             "UPDATE notifications SET est_lue = TRUE WHERE id = ? AND user_id = ?",
             [notificationId, userId]
         );
@@ -147,7 +147,7 @@ exports.marquerCommeLue = async (req, res) => {
 exports.marquerToutesCommeLues = async (req, res) => {
     try {
         const userId = req.user.id;
-        await db.promise().query(
+        await db.query(
             "UPDATE notifications SET est_lue = TRUE WHERE user_id = ? AND est_lue = FALSE",
             [userId]
         );

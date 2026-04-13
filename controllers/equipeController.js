@@ -8,7 +8,7 @@ exports.getMembres = async (req, res) => {
     try {
         console.log("👥 US1: Liste des membres");
 
-        const [membres] = await db.promise().query(`
+        const [membres] = await db.query(`
             SELECT 
                 id,
                 nom_complet,
@@ -63,7 +63,7 @@ exports.updateMembre = async (req, res) => {
         console.log(`📝 Modification membre ${membreId}`);
 
         // Vérifier que le membre existe
-        const [membre] = await db.promise().query(
+        const [membre] = await db.query(
             "SELECT * FROM users WHERE id = ? AND deleted_at IS NULL",
             [membreId]
         );
@@ -76,7 +76,7 @@ exports.updateMembre = async (req, res) => {
 
         // Vérifier email unique si changé
         if (email && email !== membre[0].email) {
-            const [existing] = await db.promise().query(
+            const [existing] = await db.query(
                 "SELECT id FROM users WHERE email = ? AND id != ?",
                 [email, membreId]
             );
@@ -130,7 +130,7 @@ exports.updateMembre = async (req, res) => {
         }
 
         const sql = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
-        await db.promise().query(sql, values);
+        await db.query(sql, values);
 
         res.json({
             success: true,
@@ -151,7 +151,7 @@ exports.desactiverMembre = async (req, res) => {
         console.log(`🔴 Désactivation membre ${membreId}`);
 
         // Vérifier que le membre existe
-        const [membre] = await db.promise().query(
+        const [membre] = await db.query(
             "SELECT * FROM users WHERE id = ? AND deleted_at IS NULL",
             [membreId]
         );
@@ -170,7 +170,7 @@ exports.desactiverMembre = async (req, res) => {
         }
 
         // Vérifier si le membre a des tâches actives (cas limité)
-        const [tachesActives] = await db.promise().query(`
+        const [tachesActives] = await db.query(`
             SELECT COUNT(*) as count 
             FROM taches 
             WHERE assigne_a = ? AND statut != 'termine' AND deleted_at IS NULL
@@ -184,7 +184,7 @@ exports.desactiverMembre = async (req, res) => {
         }
 
         // Désactiver (soft delete)
-        await db.promise().query(
+        await db.query(
             "UPDATE users SET deleted_at = NOW(), status = 0 WHERE id = ?",
             [membreId]
         );
@@ -207,7 +207,7 @@ exports.reactiverMembre = async (req, res) => {
 
         console.log(`🟢 Réactivation membre ${membreId}`);
 
-        const [result] = await db.promise().query(
+        const [result] = await db.query(
             "UPDATE users SET deleted_at = NULL, status = 1 WHERE id = ?",
             [membreId]
         );
@@ -236,7 +236,7 @@ exports.getDisponibiliteEmployes = async (req, res) => {
         console.log("📊 US2: Disponibilité des employés");
 
         // Récupérer tous les employés avec leur charge de travail
-        const [employes] = await db.promise().query(`
+        const [employes] = await db.query(`
             SELECT 
                 u.id,
                 u.nom_complet,
@@ -331,7 +331,7 @@ exports.getPerformanceEquipe = async (req, res) => {
         console.log("📈 US3: Performance équipe");
 
         // Statistiques globales
-        const [global] = await db.promise().query(`
+        const [global] = await db.query(`
             SELECT 
                 COUNT(*) as total_taches,
                 SUM(CASE WHEN statut = 'termine' THEN 1 ELSE 0 END) as taches_terminees,
@@ -345,7 +345,7 @@ exports.getPerformanceEquipe = async (req, res) => {
         `);
 
         // Performance par employé
-        const [perfEmployes] = await db.promise().query(`
+        const [perfEmployes] = await db.query(`
             SELECT 
                 u.id,
                 u.nom_complet,
@@ -423,7 +423,7 @@ exports.calculerChargeAutomatique = async (req, res) => {
         const seuilSurcharge = req.query.seuil || 5;
 
         // Calculer la charge pour chaque employé
-        const [charge] = await db.promise().query(`
+        const [charge] = await db.query(`
             SELECT 
                 u.id,
                 u.nom_complet,
@@ -520,7 +520,7 @@ exports.getTableauBordEquipe = async (req, res) => {
         console.log("📊 Tableau de bord équipe");
 
         // Récupérer toutes les données en une seule requête
-        const [stats] = await db.promise().query(`
+        const [stats] = await db.query(`
             SELECT 
                 -- Stats employés
                 (SELECT COUNT(*) FROM users WHERE role = 'employe' AND deleted_at IS NULL AND status = 1) as total_employes,
@@ -536,7 +536,7 @@ exports.getTableauBordEquipe = async (req, res) => {
         `);
 
         // Récupérer le top 5 des employés les plus productifs
-        const [topEmployes] = await db.promise().query(`
+        const [topEmployes] = await db.query(`
             SELECT 
                 u.nom_complet,
                 COUNT(t.id) as total_taches,

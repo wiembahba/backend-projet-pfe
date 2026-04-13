@@ -18,7 +18,24 @@ exports.createTache = async (req, res) => {
         if (!titre) return res.status(400).json({ message: "Le titre de la tâche est obligatoire" });
         if (!date_echeance) return res.status(400).json({ message: "La date d'échéance est obligatoire" });
 
+<<<<<<< HEAD:controllers/tacheController
         const [projet] = await db.promise().query(
+=======
+        if (!titre) {
+            return res.status(400).json({ 
+                message: "Le titre de la tâche est obligatoire" 
+            });
+        }
+
+        if (!date_echeance) {
+            return res.status(400).json({ 
+                message: "La date d'échéance est obligatoire" 
+            });
+        }
+
+        // Vérifier que le projet existe
+        const [projet] = await db.query(
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
             "SELECT * FROM projets WHERE id = ? AND deleted_at IS NULL",
             [projet_id]
         );
@@ -29,20 +46,52 @@ exports.createTache = async (req, res) => {
             return res.status(403).json({ message: "Vous n'êtes pas autorisé à créer des tâches dans ce projet" });
         }
 
+<<<<<<< HEAD:controllers/tacheController
         const [result] = await db.promise().query(`
             INSERT INTO taches (projet_id, titre, description, assigne_a, priorite, date_debut, date_echeance, created_by)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             projet_id, titre, description || null, assigne_a || null,
             priorite || 'moyenne', date_debut || null, date_echeance, req.user.id
+=======
+        const sql = `
+            INSERT INTO taches (
+                projet_id, titre, description, assigne_a, 
+                priorite, date_debut, date_echeance, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const [result] = await db.query(sql, [
+            projet_id,
+            titre,
+            description || null,
+            assigne_a || null,
+            priorite || 'moyenne',
+            date_debut || null,
+            date_echeance,
+            req.user.id
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
         ]);
 
         const nouvelleTacheId = result.insertId;
 
         if (assigne_a && assigne_a !== req.user.id) {
+<<<<<<< HEAD:controllers/tacheController
             const [createur] = await db.promise().query("SELECT nom_complet FROM users WHERE id = ?", [req.user.id]);
             const nomCreateur = createur[0]?.nom_complet || "Le chef de projet";
             const [projetInfo] = await db.promise().query("SELECT nom_projet FROM projets WHERE id = ?", [projet_id]);
+=======
+            const [createur] = await db.query(
+                "SELECT nom_complet FROM users WHERE id = ?",
+                [req.user.id]
+            );
+            const nomCreateur = createur[0]?.nom_complet || "Le chef de projet";
+            
+            const [projetInfo] = await db.query(
+                "SELECT nom_projet FROM projets WHERE id = ?",
+                [projet_id]
+            );
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
             const nomProjet = projetInfo[0]?.nom_projet || "le projet";
 
             await notificationController.createNotification(
@@ -78,7 +127,12 @@ exports.updateTache = async (req, res) => {
         const tacheId = req.params.id;
         const { titre, description, assigne_a, priorite, date_debut, date_echeance } = req.body;
 
+<<<<<<< HEAD:controllers/tacheController
         const [tache] = await db.promise().query(
+=======
+        // Vérifier que la tâche existe
+        const [tache] = await db.query(
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
             "SELECT t.*, p.chef_projet_id, p.nom_projet FROM taches t JOIN projets p ON t.projet_id = p.id WHERE t.id = ?",
             [tacheId]
         );
@@ -91,10 +145,14 @@ exports.updateTache = async (req, res) => {
 
         const ancienAssigne = tache[0].assigne_a;
 
+<<<<<<< HEAD:controllers/tacheController
         await db.promise().query(`
             UPDATE taches SET titre = ?, description = ?, assigne_a = ?, priorite = ?, date_debut = ?, date_echeance = ?
             WHERE id = ?
         `, [
+=======
+        await db.query(sql, [
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
             titre || tache[0].titre,
             description !== undefined ? description : tache[0].description,
             assigne_a !== undefined ? assigne_a : tache[0].assigne_a,
@@ -105,7 +163,14 @@ exports.updateTache = async (req, res) => {
         ]);
 
         if (assigne_a && assigne_a !== ancienAssigne && assigne_a !== req.user.id) {
+<<<<<<< HEAD:controllers/tacheController
             const [createur] = await db.promise().query("SELECT nom_complet FROM users WHERE id = ?", [req.user.id]);
+=======
+            const [createur] = await db.query(
+                "SELECT nom_complet FROM users WHERE id = ?",
+                [req.user.id]
+            );
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
             const nomCreateur = createur[0]?.nom_complet || "Le chef de projet";
 
             await notificationController.createNotification(
@@ -133,7 +198,12 @@ exports.updateTacheProgression = async (req, res) => {
             return res.status(400).json({ message: "La progression doit être entre 0 et 100" });
         }
 
+<<<<<<< HEAD:controllers/tacheController
         const [tache] = await db.promise().query(`
+=======
+        // Vérifier que la tâche existe
+        const [tache] = await db.query(`
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
             SELECT t.*, p.chef_projet_id, p.nom_projet, u.nom_complet as assigne_nom
             FROM taches t
             JOIN projets p ON t.projet_id = p.id
@@ -159,7 +229,7 @@ exports.updateTacheProgression = async (req, res) => {
         else if (progression > 0) { statut = 'en_cours'; messageStatut = `📝 En cours (${progression}%)`; }
         else { statut = 'a_faire'; messageStatut = "📋 À faire"; }
 
-        await db.promise().query(`
+        await db.query(`
             UPDATE taches 
             SET progression = ?, statut = ?,
                 date_fin = CASE WHEN ? = 100 THEN NOW() ELSE date_fin END,
@@ -238,7 +308,7 @@ exports.updateTacheStatus = async (req, res) => {
             return res.status(400).json({ message: "Statut invalide" });
         }
 
-        const [tache] = await db.promise().query(`
+        const [tache] = await db.query(`
             SELECT t.*, p.chef_projet_id, p.nom_projet, u.nom_complet as assigne_nom
             FROM taches t
             JOIN projets p ON t.projet_id = p.id
@@ -260,7 +330,7 @@ exports.updateTacheStatus = async (req, res) => {
         else if (statut === 'en_cours' && progression === 0) progression = 25;
         else if (statut === 'a_faire') progression = 0;
 
-        await db.promise().query(`
+        await db.query(`
             UPDATE taches 
             SET statut = ?, progression = ?,
                 date_fin = CASE WHEN ? = 'termine' THEN NOW() ELSE NULL END
@@ -290,7 +360,7 @@ exports.deleteTache = async (req, res) => {
     try {
         const tacheId = req.params.id;
 
-        const [tache] = await db.promise().query(
+        const [tache] = await db.query(
             "SELECT t.*, p.chef_projet_id FROM taches t JOIN projets p ON t.projet_id = p.id WHERE t.id = ?",
             [tacheId]
         );
@@ -312,12 +382,26 @@ exports.deleteTache = async (req, res) => {
         }
 
         try {
+<<<<<<< HEAD:controllers/tacheController
             await db.promise().query("DELETE FROM commentaires_tache WHERE tache_id = ?", [tacheId]);
+=======
+            await db.query(
+                "DELETE FROM commentaires_tache WHERE tache_id = ?",
+                [tacheId]
+            );
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
         } catch (err) {
             console.log("⚠️ Table commentaires_tache n'existe pas");
         }
 
+<<<<<<< HEAD:controllers/tacheController
         await db.promise().query("DELETE FROM taches WHERE id = ?", [tacheId]);
+=======
+        await db.query(
+            "DELETE FROM taches WHERE id = ?",
+            [tacheId]
+        );
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
 
         if (projetId) await exports.updateProjetProgression(projetId);
 
@@ -333,6 +417,7 @@ exports.deleteTache = async (req, res) => {
 exports.updateProjetProgression = async (projetId) => {
     try {
         if (!projetId) return;
+<<<<<<< HEAD:controllers/tacheController
 
         const [stats] = await db.promise().query(`
             SELECT 
@@ -347,6 +432,28 @@ exports.updateProjetProgression = async (projetId) => {
         const progression = total > 0 ? Math.round((terminees / total) * 100) : 0;
 
         await db.promise().query(
+=======
+        
+        console.log(`📊 Recalcul progression projet ${projetId}`);
+        
+        // Récupérer toutes les tâches avec leurs progressions
+        const [taches] = await db.query(`
+            SELECT id, titre, statut, progression
+            FROM taches 
+            WHERE projet_id = ? AND deleted_at IS NULL
+        `, [projetId]);
+        
+        console.log(`📋 Tâches du projet ${projetId}:`, taches);
+        
+        const total = taches.length;
+        const sommeProgressions = taches.reduce((sum, t) => sum + (t.progression || 0), 0);
+        
+        const progression = total > 0 ? Math.round(sommeProgressions / total) : 0;
+        
+        console.log(`📊 Calcul: somme=${sommeProgressions}, total=${total}, progression=${progression}%`);
+        
+        await db.query(
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
             "UPDATE projets SET progression = ? WHERE id = ?",
             [progression, projetId]
         );
@@ -393,7 +500,7 @@ exports.getMesTaches = async (req, res) => {
             CASE t.priorite WHEN 'haute' THEN 1 WHEN 'moyenne' THEN 2 WHEN 'faible' THEN 3 END,
             t.created_at DESC`;
 
-        const [taches] = await db.promise().query(sql);
+        const [taches] = await db.query(sql);
 
         res.json({
             success: true,
@@ -419,7 +526,7 @@ exports.getTacheById = async (req, res) => {
     try {
         const tacheId = req.params.id;
 
-        const [taches] = await db.promise().query(`
+        const [taches] = await db.query(`
             SELECT 
                 t.*,
                 u.nom_complet as assigne_nom,
@@ -439,7 +546,7 @@ exports.getTacheById = async (req, res) => {
 
         if (taches.length === 0) return res.status(404).json({ message: "Tâche non trouvée" });
 
-        const [commentaires] = await db.promise().query(`
+        const [commentaires] = await db.query(`
             SELECT c.*, u.nom_complet as auteur_nom
             FROM commentaires_tache c
             JOIN users u ON c.user_id = u.id
@@ -463,8 +570,15 @@ exports.getTachesByProjet = async (req, res) => {
     try {
         const projetId = req.params.projetId;
 
+<<<<<<< HEAD:controllers/tacheController
         const [taches] = await db.promise().query(`
             SELECT t.*, u.nom_complet as assigne_nom
+=======
+        const [taches] = await db.query(`
+            SELECT 
+                t.*,
+                u.nom_complet as assigne_nom
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
             FROM taches t
             LEFT JOIN users u ON t.assigne_a = u.id
             WHERE t.projet_id = ?
@@ -529,6 +643,53 @@ exports.analyserAvancementTache = async (req, res) => {
 
     } catch (error) {
         console.error("❌ Erreur analyserAvancementTache:", error);
+<<<<<<< HEAD:controllers/tacheController
         res.status(500).json({ message: "Erreur serveur" });
+=======
+        res.status(500).json({ 
+            success: false,
+            message: "Erreur serveur" 
+        });
+    }
+};
+
+// ===================== CALCULER AVANCEMENT AUTOMATIQUE =====================
+exports.calculerAvancementTache = async (tacheId) => {
+    try {
+        const [tache] = await db.query(`
+            SELECT * FROM taches WHERE id = ?
+        `, [tacheId]);
+
+        if (tache.length === 0) return null;
+
+        const t = tache[0];
+        const aujourdhui = new Date();
+        const dateEcheance = new Date(t.date_echeance);
+        const joursRestants = Math.ceil((dateEcheance - aujourdhui) / (1000 * 60 * 60 * 24));
+
+        let avancementRecommande = 0;
+        if (t.date_debut) {
+            const dateDebut = new Date(t.date_debut);
+            const dureeTotale = Math.ceil((dateEcheance - dateDebut) / (1000 * 60 * 60 * 24));
+            const joursEcoules = Math.ceil((aujourdhui - dateDebut) / (1000 * 60 * 60 * 24));
+            
+            if (dureeTotale > 0) {
+                avancementRecommande = Math.min(100, Math.round((joursEcoules / dureeTotale) * 100));
+            }
+        }
+
+        return {
+            progression_actuelle: t.progression,
+            avancement_recommande: avancementRecommande,
+            jours_restants: joursRestants,
+            statut: t.statut,
+            en_retard: joursRestants < 0 && t.statut !== 'termine',
+            deadline_proche: joursRestants <= 2 && joursRestants >= 0 && t.statut !== 'termine'
+        };
+
+    } catch (error) {
+        console.error("❌ Erreur calculerAvancementTache:", error);
+        return null;
+>>>>>>> 0f3c680 (correction):controllers/tacheController.js
     }
 };

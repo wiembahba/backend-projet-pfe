@@ -10,7 +10,7 @@ exports.getConfigurations = async (req, res) => {
             });
         }
         
-        const [configs] = await db.promise().query(`
+        const [configs] = await db.query(`
             SELECT cle, valeur, description FROM notification_configs
         `);
         
@@ -65,7 +65,7 @@ exports.updateConfigurations = async (req, res) => {
         
         for (const update of updates) {
             if (update.valeur !== undefined) {
-                await db.promise().query(
+                await db.query(
                     `UPDATE notification_configs 
                      SET valeur = ?, updated_at = NOW(), updated_by = ? 
                      WHERE cle = ?`,
@@ -90,7 +90,7 @@ exports.getMesPreferences = async (req, res) => {
     try {
         const userId = req.user.id;
         
-        const [preferences] = await db.promise().query(`
+        const [preferences] = await db.query(`
             SELECT type, canal, est_actif FROM user_notification_preferences 
             WHERE user_id = ?
         `, [userId]);
@@ -109,7 +109,7 @@ exports.updateMesPreferences = async (req, res) => {
         const userId = req.user.id;
         const { type, canal, est_actif } = req.body;
         
-        await db.promise().query(
+        await db.query(
             `INSERT INTO user_notification_preferences (user_id, type, canal, est_actif) 
              VALUES (?, ?, ?, ?) 
              ON DUPLICATE KEY UPDATE canal = ?, est_actif = ?`,

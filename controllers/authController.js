@@ -39,16 +39,29 @@ exports.createUser = async (req, res) => {
 
     const finalNomComplet = nom_complet || `${prenom || ''}`.trim();
 
+<<<<<<< HEAD
     const [existingUsers] = await db.promise().query(
       "SELECT id FROM users WHERE email = ?", [email]
+=======
+    // Vérifier si l'utilisateur existe déjà
+    const [existingUsers] = await db.query(
+      "SELECT id FROM users WHERE email = ?", 
+      [email]
+>>>>>>> 0f3c680 (correction)
     );
     if (existingUsers.length > 0) {
       return res.status(409).json({ message: "Email déjà utilisé" });
     }
 
     if (matricule) {
+<<<<<<< HEAD
       const [existingMatricule] = await db.promise().query(
         "SELECT id FROM users WHERE matricule = ?", [matricule]
+=======
+      const [existingMatricule] = await db.query(
+        "SELECT id FROM users WHERE matricule = ?",
+        [matricule]
+>>>>>>> 0f3c680 (correction)
       );
       if (existingMatricule.length > 0) {
         return res.status(409).json({ message: "Matricule déjà utilisé" });
@@ -66,6 +79,7 @@ exports.createUser = async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 1)
     `;
 
+<<<<<<< HEAD
     const [result] = await db.promise().query(sql, [
       finalNomComplet, prenom || null, email, hashedPassword,
       role || "employe", matricule || null, telephone || null,
@@ -73,6 +87,28 @@ exports.createUser = async (req, res) => {
       poste || null, departement || null, date_embauche || null,
       date_naissance || null, lieu_naissance || null, genre || null,
       situation_familiale || null, nombre_enfants || 0
+=======
+    const [result] = await db.query(sql, [
+      finalNomComplet,
+      prenom || null,
+      email,
+      hashedPassword,
+      role || "employe",
+      matricule || null,
+      telephone || null,
+      ville || null,
+      adresse || null,
+      code_postal || null,
+      wilaya || null,
+      poste || null,
+      departement || null,
+      date_embauche || null,
+      date_naissance || null,
+      lieu_naissance || null,
+      genre || null,
+      situation_familiale || null,
+      nombre_enfants || 0
+>>>>>>> 0f3c680 (correction)
     ]);
 
     const newUser = {
@@ -181,8 +217,14 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Email et mot de passe obligatoires" });
     }
 
+<<<<<<< HEAD
     const [users] = await db.promise().query(
       "SELECT * FROM users WHERE email = ? AND status = 1", [email]
+=======
+    const [users] = await db.query(
+      "SELECT * FROM users WHERE email = ? AND status = 1", 
+      [email]
+>>>>>>> 0f3c680 (correction)
     );
     
     if (users.length === 0) {
@@ -196,8 +238,15 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Email ou mot de passe incorrect" });
     }
 
+<<<<<<< HEAD
     await db.promise().query(
       "UPDATE users SET last_login = NOW() WHERE id = ?", [user.id]
+=======
+    // Mettre à jour la dernière connexion
+    await db.query(
+      "UPDATE users SET last_login = NOW() WHERE id = ?",
+      [user.id]
+>>>>>>> 0f3c680 (correction)
     );
 
     const token = jwt.sign(
@@ -246,8 +295,15 @@ exports.logout = async (req, res) => {
       return res.status(401).json({ success: false, message: "Utilisateur non authentifié" });
     }
 
+<<<<<<< HEAD
     const [existing] = await db.promise().query(
       "SELECT id FROM token_blacklist WHERE token = ?", [token]
+=======
+    // Vérifier si le token est déjà dans la blacklist
+    const [existing] = await db.query(
+      "SELECT id FROM token_blacklist WHERE token = ?",
+      [token]
+>>>>>>> 0f3c680 (correction)
     );
 
     if (existing.length > 0) {
@@ -256,7 +312,12 @@ exports.logout = async (req, res) => {
 
     const expiresAt = new Date(decoded.exp * 1000);
     
+<<<<<<< HEAD
     await db.promise().query(
+=======
+    // Ajouter le token à la blacklist avec l'ID de l'utilisateur
+    await db.query(
+>>>>>>> 0f3c680 (correction)
       "INSERT INTO token_blacklist (token, user_id, expires_at) VALUES (?, ?, ?)",
       [token, req.user.id, expiresAt]
     );
@@ -274,8 +335,16 @@ exports.logout = async (req, res) => {
 exports.logoutAllDevices = async (req, res) => {
   try {
     const userId = req.user.id;
+<<<<<<< HEAD
     const [result] = await db.promise().query(
       "DELETE FROM token_blacklist WHERE user_id = ? AND expires_at > NOW()", [userId]
+=======
+
+    // Supprimer tous les tokens actifs de l'utilisateur
+    const [result] = await db.query(
+      "DELETE FROM token_blacklist WHERE user_id = ? AND expires_at > NOW()",
+      [userId]
+>>>>>>> 0f3c680 (correction)
     );
     res.json({ 
       success: true,
@@ -292,8 +361,15 @@ exports.logoutAllDevices = async (req, res) => {
 exports.checkTokenStatus = async (req, res) => {
   try {
     const token = req.headers.authorization.split(' ')[1];
+<<<<<<< HEAD
     const [blacklisted] = await db.promise().query(
       "SELECT id FROM token_blacklist WHERE token = ?", [token]
+=======
+    
+    const [blacklisted] = await db.query(
+      "SELECT id FROM token_blacklist WHERE token = ?",
+      [token]
+>>>>>>> 0f3c680 (correction)
     );
     if (blacklisted.length > 0) {
       return res.status(401).json({ success: false, message: "Token révoqué", valid: false });
@@ -308,7 +384,7 @@ exports.checkTokenStatus = async (req, res) => {
 // ===================== CLEANUP =====================
 async function cleanupExpiredTokens() {
   try {
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       "DELETE FROM token_blacklist WHERE expires_at < NOW()"
     );
     if (result.affectedRows > 0) {
@@ -327,7 +403,12 @@ exports.getUsers = async (req, res) => {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: "Accès non autorisé" });
     }
+<<<<<<< HEAD
     const [users] = await db.promise().query(`
+=======
+
+    const [users] = await db.query(`
+>>>>>>> 0f3c680 (correction)
       SELECT 
         id, nom_complet, email, role, status,
         matricule, telephone, departement, poste, ville, wilaya,
@@ -349,7 +430,12 @@ exports.getUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const userId = req.params.id;
+<<<<<<< HEAD
     const [users] = await db.promise().query(`
+=======
+    
+    const [users] = await db.query(`
+>>>>>>> 0f3c680 (correction)
       SELECT 
         id, nom_complet, prenom, email, role,
         matricule, telephone, adresse, code_postal, ville, wilaya,
@@ -396,8 +482,14 @@ exports.updateUser = async (req, res) => {
     const fields = Object.keys(updates).map(key => `${key} = ?`).join(', ');
     const values = [...Object.values(updates), userId];
 
+<<<<<<< HEAD
     const [result] = await db.promise().query(
       `UPDATE users SET ${fields}, updated_at = NOW() WHERE id = ?`, values
+=======
+    const [result] = await db.query(
+      `UPDATE users SET ${fields}, updated_at = NOW() WHERE id = ?`,
+      values
+>>>>>>> 0f3c680 (correction)
     );
 
     if (result.affectedRows === 0) {
@@ -415,8 +507,16 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const userId = req.params.id;
+<<<<<<< HEAD
     const [user] = await db.promise().query(
       "SELECT id, role FROM users WHERE id = ?", [userId]
+=======
+    
+    // Vérifier si l'utilisateur existe
+    const [user] = await db.query(
+      "SELECT id, role FROM users WHERE id = ?",
+      [userId]
+>>>>>>> 0f3c680 (correction)
     );
     if (user.length === 0) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
@@ -424,8 +524,16 @@ exports.deleteUser = async (req, res) => {
     if (req.user.id === parseInt(userId)) {
       return res.status(400).json({ message: "Vous ne pouvez pas supprimer votre propre compte" });
     }
+<<<<<<< HEAD
     const [result] = await db.promise().query(
       "UPDATE users SET deleted_at = NOW(), status = 0 WHERE id = ?", [userId]
+=======
+
+    // Soft delete (marquer comme supprimé sans effacer)
+    const [result] = await db.query(
+      "UPDATE users SET deleted_at = NOW(), status = 0 WHERE id = ?",
+      [userId]
+>>>>>>> 0f3c680 (correction)
     );
     if (result.affectedRows === 0) {
       return res.status(500).json({ message: "Échec de la suppression" });
@@ -441,8 +549,15 @@ exports.deleteUser = async (req, res) => {
 exports.restoreUser = async (req, res) => {
   try {
     const userId = req.params.id;
+<<<<<<< HEAD
     const [result] = await db.promise().query(
       "UPDATE users SET deleted_at = NULL, status = 1 WHERE id = ?", [userId]
+=======
+    
+    const [result] = await db.query(
+      "UPDATE users SET deleted_at = NULL, status = 1 WHERE id = ?",
+      [userId]
+>>>>>>> 0f3c680 (correction)
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
@@ -467,8 +582,15 @@ exports.changePassword = async (req, res) => {
       return res.status(400).json({ message: "Le nouveau mot de passe doit contenir au moins 6 caractères" });
     }
 
+<<<<<<< HEAD
     const [users] = await db.promise().query(
       "SELECT password FROM users WHERE id = ?", [userId]
+=======
+    // Récupérer l'utilisateur avec son mot de passe
+    const [users] = await db.query(
+      "SELECT password FROM users WHERE id = ?",
+      [userId]
+>>>>>>> 0f3c680 (correction)
     );
     if (users.length === 0) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
@@ -480,7 +602,13 @@ exports.changePassword = async (req, res) => {
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+<<<<<<< HEAD
     await db.promise().query(
+=======
+
+    // Mettre à jour
+    await db.query(
+>>>>>>> 0f3c680 (correction)
       "UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?",
       [hashedNewPassword, userId]
     );

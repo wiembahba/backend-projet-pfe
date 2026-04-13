@@ -8,7 +8,7 @@ exports.analyserTauxAvancement = async (req, res) => {
         console.log(`🔮 Analyse taux d'avancement - Projet ${projetId} pour chef ${req.user.id}`);
 
         // ✅ Vérifier que le projet appartient au chef connecté
-        const [projet] = await db.promise().query(`
+        const [projet] = await db.query(`
             SELECT 
                 p.id,
                 p.nom_projet,
@@ -122,7 +122,7 @@ exports.analyserTempsRestant = async (req, res) => {
         console.log(`⏰ Analyse temps restant - Projet ${projetId} pour chef ${req.user.id}`);
 
         // ✅ Vérifier que le projet appartient au chef
-        const [projetCheck] = await db.promise().query(`
+        const [projetCheck] = await db.query(`
             SELECT chef_projet_id FROM projets WHERE id = ? AND deleted_at IS NULL
         `, [projetId]);
 
@@ -134,7 +134,7 @@ exports.analyserTempsRestant = async (req, res) => {
             return res.status(403).json({ success: false, message: "Accès non autorisé" });
         }
 
-        const [taches] = await db.promise().query(`
+        const [taches] = await db.query(`
             SELECT 
                 t.id,
                 t.titre,
@@ -191,7 +191,7 @@ exports.analyserChargeTravail = async (req, res) => {
         console.log(`👥 Analyse charge de travail - Projet ${projetId} pour chef ${req.user.id}`);
 
         // ✅ Vérifier que le projet appartient au chef
-        const [projetCheck] = await db.promise().query(`
+        const [projetCheck] = await db.query(`
             SELECT chef_projet_id FROM projets WHERE id = ? AND deleted_at IS NULL
         `, [projetId]);
 
@@ -203,7 +203,7 @@ exports.analyserChargeTravail = async (req, res) => {
             return res.status(403).json({ success: false, message: "Accès non autorisé" });
         }
 
-        const [chargeEmployes] = await db.promise().query(`
+        const [chargeEmployes] = await db.query(`
             SELECT 
                 u.id,
                 u.nom_complet,
@@ -258,7 +258,7 @@ exports.classifierTachesParRisque = async (req, res) => {
         console.log(`📊 Classification des tâches par risque - Projet ${projetId} pour chef ${req.user.id}`);
 
         // ✅ Vérifier que le projet appartient au chef
-        const [projetCheck] = await db.promise().query(`
+        const [projetCheck] = await db.query(`
             SELECT chef_projet_id FROM projets WHERE id = ? AND deleted_at IS NULL
         `, [projetId]);
 
@@ -270,7 +270,7 @@ exports.classifierTachesParRisque = async (req, res) => {
             return res.status(403).json({ success: false, message: "Accès non autorisé" });
         }
 
-        const [taches] = await db.promise().query(`
+        const [taches] = await db.query(`
             SELECT 
                 t.id,
                 t.titre,
@@ -354,7 +354,7 @@ exports.analyseGlobaleRisques = async (req, res) => {
         console.log(`📈 Analyse globale des risques - Projet ${projetId} pour chef ${req.user.id}`);
 
         // ✅ Vérifier que le projet appartient au chef
-        const [projet] = await db.promise().query(`
+        const [projet] = await db.query(`
             SELECT 
                 p.id,
                 p.nom_projet,

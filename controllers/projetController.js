@@ -41,7 +41,7 @@ exports.createProjet = async (req, res) => {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        const [result] = await db.promise().query(sql, [
+        const [result] = await db.query(sql, [
             nom_projet,
             description || null,
             chef_projet_id || null,
@@ -98,7 +98,7 @@ exports.getAllProjets = async (req, res) => {
 
         sql += ` ORDER BY p.created_at DESC`;
 
-        const [projets] = await db.promise().query(sql);
+        const [projets] = await db.query(sql);
 
         // Calculer la progression pour chaque projet
         projets.forEach(projet => {
@@ -126,7 +126,7 @@ exports.getProjetById = async (req, res) => {
     try {
         const projetId = req.params.id;
 
-        const [projets] = await db.promise().query(`
+        const [projets] = await db.query(`
             SELECT 
                 p.*,
                 u.nom_complet as chef_nom,
@@ -143,9 +143,29 @@ exports.getProjetById = async (req, res) => {
         }
 
         const projet = projets[0];
+<<<<<<< HEAD
+=======
+        
+        // ✅ Récupérer les statistiques des tâches
+        const [stats] = await db.query(`
+            SELECT 
+                COUNT(*) as total_taches,
+                SUM(CASE WHEN statut = 'termine' THEN 1 ELSE 0 END) as taches_terminees,
+                SUM(progression) as somme_progressions
+            FROM taches 
+            WHERE projet_id = ? AND deleted_at IS NULL
+        `, [projetId]);
+
+        const totalTaches = stats[0].total_taches || 0;
+        const tachesTerminees = stats[0].taches_terminees || 0;
+        const sommeProgressions = stats[0].somme_progressions || 0;
+        
+        // ✅ Calculer la progression (moyenne des progressions)
+        const progression = totalTaches > 0 ? Math.round(sommeProgressions / totalTaches) : 0;
+>>>>>>> 0f3c680 (correction)
 
         // Récupérer les tâches du projet
-        const [taches] = await db.promise().query(`
+        const [taches] = await db.query(`
             SELECT 
                 t.*,
                 u.nom_complet as assigne_nom
@@ -193,7 +213,7 @@ exports.updateProjet = async (req, res) => {
         } = req.body;
 
         // Vérifier que le projet existe
-        const [projet] = await db.promise().query(
+        const [projet] = await db.query(
             "SELECT * FROM projets WHERE id = ? AND deleted_at IS NULL",
             [projetId]
         );
@@ -224,7 +244,7 @@ exports.updateProjet = async (req, res) => {
             WHERE id = ?
         `;
 
-        await db.promise().query(sql, [
+        await db.query(sql, [
             nom_projet || projet[0].nom_projet,
             description !== undefined ? description : projet[0].description,
             chef_projet_id || projet[0].chef_projet_id,
@@ -256,7 +276,7 @@ exports.deleteProjet = async (req, res) => {
     const projetId = req.params.id;
 
     // Vérifier que le projet existe
-    const [projet] = await db.promise().query(
+    const [projet] = await db.query(
       "SELECT * FROM projets WHERE id = ?",
       [projetId]
     );
@@ -275,13 +295,13 @@ exports.deleteProjet = async (req, res) => {
     }
 
     // ✅ HARD DELETE - Supprimer définitivement de la base
-    await db.promise().query(
+    await db.query(
       "DELETE FROM projets WHERE id = ?",
       [projetId]
     );
 
     // Supprimer aussi les tâches liées au projet (optionnel)
-    await db.promise().query(
+    await db.query(
       "DELETE FROM taches WHERE projet_id = ?",
       [projetId]
     );
@@ -306,7 +326,7 @@ exports.calculerAvancementProjet = async (req, res) => {
         console.log(`📊 Calcul avancement pour projet ${projetId}`);
 
         // Vérifier d'abord si le projet existe
-        const [projet] = await db.promise().query(
+        const [projet] = await db.query(
             "SELECT * FROM projets WHERE id = ? AND deleted_at IS NULL",
             [projetId]
         );
@@ -319,7 +339,7 @@ exports.calculerAvancementProjet = async (req, res) => {
         }
 
         // Récupérer les statistiques des tâches avec les bonnes valeurs ENUM
-        const [stats] = await db.promise().query(`
+        const [stats] = await db.query(`
             SELECT 
                 COUNT(*) as total_taches,
                 SUM(CASE WHEN statut = 'termine' THEN 1 ELSE 0 END) as taches_terminees,
@@ -350,7 +370,7 @@ exports.calculerAvancementProjet = async (req, res) => {
         }
 
         // Mettre à jour le projet
-        await db.promise().query(`
+        await db.query(`
             UPDATE projets 
             SET progression = ?, 
                 statut = ?,
@@ -360,7 +380,7 @@ exports.calculerAvancementProjet = async (req, res) => {
 
         // Si le projet est terminé, mettre la date de fin réelle
         if (statutProjet === 'termine') {
-            await db.promise().query(`
+            await db.query(`
                 UPDATE projets 
                 SET date_fin_reelle = CURDATE() 
                 WHERE id = ?
@@ -395,7 +415,7 @@ exports.calculerAvancementProjet = async (req, res) => {
 exports.verifierDeadlines = async (req, res) => {
     try {
         // Récupérer tous les projets avec leur état par rapport à la deadline
-        const [projets] = await db.promise().query(`
+        const [projets] = await db.query(`
             SELECT 
                 id,
                 nom_projet,
@@ -455,7 +475,7 @@ exports.verifierDeadlines = async (req, res) => {
 // ===================== ANALYSER LA PRIORITÉ DES PROJETS =====================
 exports.analyserPriorites = async (req, res) => {
     try {
-        const [stats] = await db.promise().query(`
+        const [stats] = await db.query(`
             SELECT 
                 priorite,
                 COUNT(*) as nombre_projets,
@@ -517,7 +537,7 @@ exports.updatePriorite = async (req, res) => {
         }
 
         // Vérifier que le projet existe
-        const [projet] = await db.promise().query(
+        const [projet] = await db.query(
             "SELECT * FROM projets WHERE id = ? AND deleted_at IS NULL",
             [projetId]
         );
@@ -529,7 +549,7 @@ exports.updatePriorite = async (req, res) => {
         }
 
         // Mettre à jour la priorité
-        await db.promise().query(
+        await db.query(
             "UPDATE projets SET priorite = ?, updated_at = NOW() WHERE id = ?",
             [priorite, projetId]
         );
@@ -565,7 +585,7 @@ exports.prolongerDeadline = async (req, res) => {
         }
 
         // Vérifier que le projet existe
-        const [projet] = await db.promise().query(
+        const [projet] = await db.query(
             "SELECT * FROM projets WHERE id = ? AND deleted_at IS NULL",
             [projetId]
         );
@@ -590,7 +610,7 @@ exports.prolongerDeadline = async (req, res) => {
         const joursProlongation = Math.round((newDate - oldDate) / (1000 * 60 * 60 * 24));
 
         // Mettre à jour la deadline
-        await db.promise().query(
+        await db.query(
             `UPDATE projets 
              SET date_fin_prevue = ?, 
                  updated_at = NOW() 
@@ -599,7 +619,7 @@ exports.prolongerDeadline = async (req, res) => {
         );
 
         // Enregistrer l'historique de prolongation (optionnel - créer table si besoin)
-        // await db.promise().query(
+        // await db.query(
         //     "INSERT INTO prolongations (projet_id, ancienne_date, nouvelle_date, raison, prolonge_par) VALUES (?, ?, ?, ?, ?)",
         //     [projetId, projet[0].date_fin_prevue, nouvelle_date_fin, raison || 'Non spécifiée', req.user.id]
         // );

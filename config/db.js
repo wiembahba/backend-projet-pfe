@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const mysql = require("mysql2");
 
 const pool = mysql.createPool({
@@ -16,7 +17,29 @@ pool.getConnection((err, connection) => {
     } else {
         console.log("✅ MYSQL connecté");
         connection.release();
-    }
+=======
+// config/db.js
+const mysql = require('mysql2/promise');
+
+const db = mysql.createPool({
+    host: "localhost",
+    user: "root",
+    password: "wiem bahba",
+    database: "gestion_projet",
+    waitForConnections: true,
+  connectionLimit: 10
 });
+
+
+(async () => {
+    try {
+        const connection = await db.getConnection();
+        console.log("✅ MYSQL connecté ");
+        connection.release();
+    } catch (err) {
+        console.log("❌ erreur connexion DB", err);
+>>>>>>> 0f3c680 (correction)
+    }
+})();
 
 module.exports = pool;

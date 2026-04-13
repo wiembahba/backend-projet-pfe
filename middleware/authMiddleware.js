@@ -48,7 +48,7 @@ const verifyToken = async (req, res, next) => {
     
     // Vérifier blacklist
     if (db) {
-      const [blacklisted] = await db.promise().query(
+      const [blacklisted] = await db.query(
         "SELECT id FROM token_blacklist WHERE token = ?",
         [token]
       );

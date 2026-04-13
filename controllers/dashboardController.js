@@ -18,7 +18,7 @@ exports.getProjetsParStatut = async (req, res) => {
         }
 
         // ✅ Récupérer les détails des projets
-        const [projets] = await db.promise().query(`
+        const [projets] = await db.query(`
             SELECT 
                 p.id,
                 p.nom_projet,
@@ -83,7 +83,7 @@ exports.getIndicateursProjet = async (req, res) => {
         console.log(`📊 US2: Indicateurs pour projet ${projetId}`);
 
         // Récupérer les données du projet
-        const [projet] = await db.promise().query(`
+        const [projet] = await db.query(`
             SELECT 
                 p.id,
                 p.nom_projet,
@@ -189,7 +189,7 @@ exports.getChargeEquipe = async (req, res) => {
         console.log("📊 US3: Charge de travail équipe");
 
         // Récupérer tous les employés avec leur charge
-        const [employes] = await db.promise().query(`
+        const [employes] = await db.query(`
             SELECT 
                 u.id,
                 u.nom_complet,
@@ -277,7 +277,7 @@ exports.getTachesRisquees = async (req, res) => {
         }
 
         // ✅ CORRECTION: Utiliser whereClause dans la requête !
-        const [taches] = await db.promise().query(`
+        const [taches] = await db.query(`
             SELECT 
                 t.id,
                 t.titre,
@@ -413,7 +413,7 @@ exports.getVueGlobaleAdmin = async (req, res) => {
         }
 
         // 1. Statistiques utilisateurs
-        const [users] = await db.promise().query(`
+        const [users] = await db.query(`
             SELECT 
                 COUNT(*) as total_utilisateurs,
                 SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) as admins,
@@ -425,7 +425,7 @@ exports.getVueGlobaleAdmin = async (req, res) => {
         `);
 
         // 2. Statistiques projets
-        const [projets] = await db.promise().query(`
+        const [projets] = await db.query(`
             SELECT 
                 COUNT(*) as total_projets,
                 SUM(CASE WHEN statut = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
@@ -436,7 +436,7 @@ exports.getVueGlobaleAdmin = async (req, res) => {
         `);
 
         // 3. Statistiques tâches
-        const [taches] = await db.promise().query(`
+        const [taches] = await db.query(`
             SELECT 
                 COUNT(*) as total_taches,
                 SUM(CASE WHEN statut = 'termine' THEN 1 ELSE 0 END) as terminees,
@@ -447,7 +447,7 @@ exports.getVueGlobaleAdmin = async (req, res) => {
         `);
 
         // 4. Activité récente (30 derniers jours)
-        const [activite] = await db.promise().query(`
+        const [activite] = await db.query(`
             SELECT 
                 DATE(last_login) as date,
                 COUNT(*) as connexions
