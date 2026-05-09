@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Gestion Projets",
+    "slug": "gestion-projets-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#0f2057"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gestionprojets.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f2057"
+      },
+      "package": "com.gestionprojets.mobile"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}
