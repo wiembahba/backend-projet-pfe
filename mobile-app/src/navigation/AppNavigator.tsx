@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { T } from '../constants/theme';
+import { notificationApi } from '../services/api';
 
 // Auth screens
 import SignInScreen from '../screens/auth/SignInScreen';
@@ -23,8 +24,7 @@ import RiskScreen from '../screens/risk/RiskScreen';
 import UsersListScreen from '../screens/users/UsersListScreen';
 import CreateUserScreen from '../screens/users/CreateUserScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
-
-// Chat widget (FAB + Modal)
+import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 import ChatWidget from '../components/ChatWidget';
 
 const AuthStack     = createNativeStackNavigator();
@@ -32,7 +32,6 @@ const Tab           = createBottomTabNavigator();
 const ProjectsStack = createNativeStackNavigator();
 const UsersStack    = createNativeStackNavigator();
 
-// ===================== Projects Navigator =====================
 function ProjectsNavigator() {
   return (
     <ProjectsStack.Navigator screenOptions={{ headerShown: false }}>
@@ -42,7 +41,6 @@ function ProjectsNavigator() {
   );
 }
 
-// ===================== Users Navigator =====================
 function UsersNavigator() {
   return (
     <UsersStack.Navigator screenOptions={{ headerShown: false }}>
@@ -52,9 +50,28 @@ function UsersNavigator() {
   );
 }
 
-// ===================== App Tabs =====================
 function AppTabs() {
-  const { user, isAdmin, isChef } = useAuth();
+  const { user, isAdmin, isChef, token } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // ---- جلب عدد الإشعارات غير المقروءة ----
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchCount = async () => {
+      try {
+        const data = await notificationApi.getAll(token);
+        const notifs = data?.notifications || data || [];
+        setUnreadCount(notifs.filter((n: any) => !n.lu).length);
+      } catch {}
+    };
+
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000); // كل 30 ثانية
+    return () => clearInterval(interval);
+  }, [token]);
+  // -----------------------------------------
+
   if (!user) return null;
 
   return (
@@ -75,7 +92,6 @@ function AppTabs() {
           tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
         }}
       >
-        {/* Dashboard — tous les rôles */}
         <Tab.Screen
           name="Dashboard"
           component={DashboardScreen}
@@ -85,7 +101,6 @@ function AppTabs() {
           }}
         />
 
-        {/* Projects — chef + employé */}
         {(isChef || !isAdmin) && (
           <Tab.Screen
             name="Projects"
@@ -97,7 +112,6 @@ function AppTabs() {
           />
         )}
 
-        {/* Tasks — chef + employé */}
         {(isChef || !isAdmin) && (
           <Tab.Screen
             name="Tasks"
@@ -109,7 +123,6 @@ function AppTabs() {
           />
         )}
 
-        {/* Calendar — tous les rôles */}
         <Tab.Screen
           name="Calendar"
           component={CalendarScreen}
@@ -119,7 +132,6 @@ function AppTabs() {
           }}
         />
 
-        {/* Team — admin + chef */}
         {(isAdmin || isChef) && (
           <Tab.Screen
             name="Team"
@@ -131,7 +143,6 @@ function AppTabs() {
           />
         )}
 
-        {/* Risk — chef uniquement */}
         {isChef && (
           <Tab.Screen
             name="Risk"
@@ -143,7 +154,6 @@ function AppTabs() {
           />
         )}
 
-        {/* Users — admin uniquement */}
         {isAdmin && (
           <Tab.Screen
             name="Users"
@@ -155,7 +165,24 @@ function AppTabs() {
           />
         )}
 
-        {/* Profile — tous les rôles */}
+        {/* ---- Notifications مع البادج ---- */}
+        <Tab.Screen
+          name="Notifications"
+          options={{
+            tabBarLabel: 'Notifications',
+            tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+            tabBarBadgeStyle: { backgroundColor: '#f87171', fontSize: 10 },
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="notifications-outline" size={size} color={color} />
+            ),
+          }}
+        >
+          {() => (
+            <NotificationsScreen onCountChange={setUnreadCount} />
+          )}
+        </Tab.Screen>
+        {/* --------------------------------- */}
+
         <Tab.Screen
           name="Profile"
           component={ProfileScreen}
@@ -166,13 +193,11 @@ function AppTabs() {
         />
       </Tab.Navigator>
 
-      {/* FAB ChatWidget — visible sur tous les écrans */}
       <ChatWidget />
     </View>
   );
 }
 
-// ===================== Root Navigator =====================
 export default function AppNavigator() {
   const { user } = useAuth();
 

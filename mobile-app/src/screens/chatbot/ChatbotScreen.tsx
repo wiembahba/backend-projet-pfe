@@ -93,15 +93,15 @@ function TypingDots() {
 // ─── Main widget ─────────────────────────────────────────────
 export default function ChatWidget() {
   const { token } = useAuth();
-  const [isOpen, setIsOpen]         = useState(false);
+  const [isOpen, setIsOpen]               = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [messages, setMessages]     = useState<Message[]>([{
+  const [messages, setMessages]           = useState<Message[]>([{
     role: "assistant",
     content: "Bonjour ! Je suis votre assistant de gestion de projets.\n\nPosez-moi une question sur vos **projets**, **tâches**, ou **équipe**.",
     timestamp: new Date(),
   }]);
-  const [input, setInput]           = useState("");
-  const [isLoading, setIsLoading]   = useState(false);
+  const [input, setInput]                 = useState("");
+  const [isLoading, setIsLoading]         = useState(false);
   const [uploadedFile, setUploadedFile]   = useState<any>(null);
   const [uploadedImage, setUploadedImage] = useState<any>(null);
   const [imagePreview, setImagePreview]   = useState<string | null>(null);
@@ -109,7 +109,7 @@ export default function ChatWidget() {
   const [docLoaded, setDocLoaded]         = useState<string | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions]           = useState<Session[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsLoading, setSessionsLoading]   = useState(false);
   const [sessionsAvailable, setSessionsAvailable] = useState(true);
 
   const flatListRef = useRef<FlatList>(null);
@@ -190,7 +190,7 @@ export default function ChatWidget() {
     try {
       const body: any = { message: text };
       if (sessionId) body.sessionId = sessionId;
-      const res  = await fetch(`${API}/message`, {
+      const res = await fetch(`${API}/message`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
@@ -314,37 +314,26 @@ export default function ChatWidget() {
     );
   };
 
-  // ─── Render ──────────────────────────────────────────────────
   return (
     <>
       {/* ── FAB Button ── */}
-      <TouchableOpacity
-        style={s.fab}
-        onPress={() => setIsOpen(o => !o)}
-        activeOpacity={0.85}
-      >
+      <TouchableOpacity style={s.fab} onPress={() => setIsOpen(o => !o)} activeOpacity={0.85}>
         <Ionicons name={isOpen ? "close" : "chatbubble-ellipses"} size={24} color="#fff" />
       </TouchableOpacity>
 
       {/* ── Chat Modal ── */}
-      <Modal
-        visible={isOpen}
-        animationType="slide"
-        transparent={false}
-        onRequestClose={() => setIsOpen(false)}
-      >
+      <Modal visible={isOpen} animationType="slide" transparent={false} onRequestClose={() => setIsOpen(false)}>
         <SafeAreaView style={s.modalRoot}>
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-          >
-            {/* Sidebar drawer overlay */}
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+
+            {/* Sidebar overlay */}
             {isSidebarOpen && (
               <TouchableOpacity style={s.sidebarOverlay} activeOpacity={1} onPress={() => setIsSidebarOpen(false)} />
             )}
+
+            {/* Sidebar drawer */}
             {isSidebarOpen && (
               <View style={s.sidebarDrawer}>
-                {/* Brand */}
                 <View style={s.sidebarBrand}>
                   <View style={s.botIconWrap}>
                     <Ionicons name="hardware-chip-outline" size={14} color="#fff" />
@@ -355,13 +344,11 @@ export default function ChatWidget() {
                   </TouchableOpacity>
                 </View>
 
-                {/* New chat */}
                 <TouchableOpacity style={s.newChatBtn} onPress={startNewChat}>
                   <Ionicons name="add" size={16} color={C.textMid} />
                   <Text style={s.newChatText}>Nouvelle conversation</Text>
                 </TouchableOpacity>
 
-                {/* Sessions */}
                 <ScrollView style={{ flex: 1, paddingHorizontal: 8 }} showsVerticalScrollIndicator={false}>
                   {sessionsLoading ? (
                     <Text style={s.sessionMeta}>Chargement...</Text>
@@ -391,7 +378,6 @@ export default function ChatWidget() {
                   )}
                 </ScrollView>
 
-                {/* Footer */}
                 <View style={s.sidebarFooter}>
                   <Text style={s.sidebarFooterText}>
                     {isLoading ? "⏳ En cours..." : docLoaded ? `📄 ${docLoaded}` : "🟢 En ligne"}
@@ -493,72 +479,53 @@ export default function ChatWidget() {
 
 // ─── Styles ──────────────────────────────────────────────────
 const s = StyleSheet.create({
-  // FAB
-  fab:              { position: "absolute", bottom: 80, right: 20, width: 52, height: 52, borderRadius: 26, backgroundColor: C.green, alignItems: "center", justifyContent: "center", zIndex: 999, elevation: 8, shadowColor: C.green, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 },
-
-  // Modal
-  modalRoot:        { flex: 1, backgroundColor: C.bg },
-
-  // Sidebar
-  sidebarOverlay:   { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 10 },
-  sidebarDrawer:    { position: "absolute", top: 0, left: 0, bottom: 0, width: 280, backgroundColor: C.sidebar, borderRightWidth: 1, borderRightColor: C.border, zIndex: 11, flexDirection: "column" },
-  sidebarBrand:     { flexDirection: "row", alignItems: "center", gap: 8, padding: 16, paddingBottom: 12 },
-  botIconWrap:      { width: 26, height: 26, borderRadius: 7, backgroundColor: C.green, alignItems: "center", justifyContent: "center" },
-  brandName:        { flex: 1, color: C.white, fontSize: 15, fontWeight: "600" },
-  newChatBtn:       { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 12, marginBottom: 8, padding: 9, borderRadius: 8, borderWidth: 1, borderColor: C.border2 },
-  newChatText:      { color: C.textMid, fontSize: 13 },
-  sessionGroupLabel:{ fontSize: 10, color: C.textLabel, paddingHorizontal: 4, paddingVertical: 6, letterSpacing: 0.8 },
-  sessionItem:      { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 9, borderRadius: 8, marginBottom: 2 },
-  sessionItemActive:{ backgroundColor: "#2a2a2a" },
-  sessionTitle:     { fontSize: 13, color: C.textMid, marginBottom: 1 },
+  fab:               { position: "absolute", bottom: 80, right: 20, width: 52, height: 52, borderRadius: 26, backgroundColor: C.green, alignItems: "center", justifyContent: "center", zIndex: 999, elevation: 8, shadowColor: C.green, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 },
+  modalRoot:         { flex: 1, backgroundColor: C.bg },
+  sidebarOverlay:    { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 10 },
+  sidebarDrawer:     { position: "absolute", top: 0, left: 0, bottom: 0, width: 280, backgroundColor: C.sidebar, borderRightWidth: 1, borderRightColor: C.border, zIndex: 11, flexDirection: "column" },
+  sidebarBrand:      { flexDirection: "row", alignItems: "center", gap: 8, padding: 16, paddingBottom: 12 },
+  botIconWrap:       { width: 26, height: 26, borderRadius: 7, backgroundColor: C.green, alignItems: "center", justifyContent: "center" },
+  brandName:         { flex: 1, color: C.white, fontSize: 15, fontWeight: "600" },
+  newChatBtn:        { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 12, marginBottom: 8, padding: 9, borderRadius: 8, borderWidth: 1, borderColor: C.border2 },
+  newChatText:       { color: C.textMid, fontSize: 13 },
+  sessionGroupLabel: { fontSize: 10, color: C.textLabel, paddingHorizontal: 4, paddingVertical: 6, letterSpacing: 0.8 },
+  sessionItem:       { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 9, borderRadius: 8, marginBottom: 2 },
+  sessionItemActive: { backgroundColor: "#2a2a2a" },
+  sessionTitle:      { fontSize: 13, color: C.textMid, marginBottom: 1 },
   sessionTitleActive:{ color: C.white, fontWeight: "500" },
-  sessionDate:      { fontSize: 11, color: C.textLabel },
-  sessionMeta:      { textAlign: "center", color: C.textDim, fontSize: 12, padding: 16 },
-  sidebarFooter:    { padding: 14, borderTopWidth: 1, borderTopColor: "#222" },
-  sidebarFooterText:{ fontSize: 11, color: C.textLabel },
-
-  // Header
-  header:           { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.bg },
-  headerBtn:        { padding: 6 },
-  headerTitle:      { flex: 1, textAlign: "center", color: C.white, fontSize: 14, fontWeight: "500" },
-
-  // Messages
-  messageList:      { paddingVertical: 8, paddingHorizontal: 4 },
-  messageRow:       { flexDirection: "row", paddingHorizontal: 16, paddingVertical: 8, gap: 10, alignItems: "flex-start" },
-  messageRowBot:    { backgroundColor: "rgba(255,255,255,0.02)" },
-  avatar:           { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 },
-  avatarBot:        { backgroundColor: C.green },
-  avatarUser:       { backgroundColor: C.userAv },
-  avatarUserText:   { color: "#fff", fontSize: 12, fontWeight: "600" },
-  messageBubble:    { flex: 1 },
-  messageTime:      { fontSize: 11, color: C.textLabel, marginTop: 4 },
-  imagePreview:     { width: 160, height: 120, borderRadius: 8, marginBottom: 6 },
-
-  // Typing
-  typingRow:        { flexDirection: "row", paddingHorizontal: 16, paddingVertical: 8, gap: 10, alignItems: "flex-start" },
-  dotsWrap:         { flexDirection: "row", gap: 5, alignItems: "center", paddingTop: 10 },
-  dot:              { width: 6, height: 6, borderRadius: 3, backgroundColor: C.textDim },
-
-  // Quick replies
-  quickReply:       { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: C.border2 },
-  quickReplyText:   { color: C.textMuted, fontSize: 12 },
-
-  // File preview
-  filePreview:      { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 16, marginBottom: 8, padding: 10, backgroundColor: "#2a2a2a", borderRadius: 10, borderWidth: 1, borderColor: C.border3 },
-  filePreviewLeft:  { flexDirection: "row", alignItems: "center", gap: 10, flex: 1, marginRight: 8 },
-  fileThumb:        { width: 36, height: 36, borderRadius: 6 },
-  fileName:         { color: C.textMid, fontSize: 13, flex: 1 },
-
-  // Input
-  inputWrap:        { paddingHorizontal: 16, paddingTop: 6, paddingBottom: 2 },
-  inputBox:         { backgroundColor: C.input, borderRadius: 12, borderWidth: 1, borderColor: C.border3, paddingHorizontal: 14, paddingVertical: 10, minHeight: 44 },
-  textInput:        { color: C.text, fontSize: 14, lineHeight: 20, maxHeight: 120 },
-  inputActions:     { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 6, marginBottom: 4 },
-  actionBtn:        { width: 34, height: 34, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  actionBtnActive:  { backgroundColor: C.greenDim },
-  sendBtn:          { width: 34, height: 34, borderRadius: 8, backgroundColor: C.green, alignItems: "center", justifyContent: "center" },
-  sendBtnDisabled:  { backgroundColor: "#3a3a3a" },
-
-  // Footer
-  disclaimer:       { textAlign: "center", fontSize: 10, color: C.textLabel, paddingBottom: 10, paddingTop: 2 },
+  sessionDate:       { fontSize: 11, color: C.textLabel },
+  sessionMeta:       { textAlign: "center", color: C.textDim, fontSize: 12, padding: 16 },
+  sidebarFooter:     { padding: 14, borderTopWidth: 1, borderTopColor: "#222" },
+  sidebarFooterText: { fontSize: 11, color: C.textLabel },
+  header:            { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.bg },
+  headerBtn:         { padding: 6 },
+  headerTitle:       { flex: 1, textAlign: "center", color: C.white, fontSize: 14, fontWeight: "500" },
+  messageList:       { paddingVertical: 8, paddingHorizontal: 4 },
+  messageRow:        { flexDirection: "row", paddingHorizontal: 16, paddingVertical: 8, gap: 10, alignItems: "flex-start" },
+  messageRowBot:     { backgroundColor: "rgba(255,255,255,0.02)" },
+  avatar:            { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 },
+  avatarBot:         { backgroundColor: C.green },
+  avatarUser:        { backgroundColor: C.userAv },
+  avatarUserText:    { color: "#fff", fontSize: 12, fontWeight: "600" },
+  messageBubble:     { flex: 1 },
+  messageTime:       { fontSize: 11, color: C.textLabel, marginTop: 4 },
+  imagePreview:      { width: 160, height: 120, borderRadius: 8, marginBottom: 6 },
+  typingRow:         { flexDirection: "row", paddingHorizontal: 16, paddingVertical: 8, gap: 10, alignItems: "flex-start" },
+  dotsWrap:          { flexDirection: "row", gap: 5, alignItems: "center", paddingTop: 10 },
+  dot:               { width: 6, height: 6, borderRadius: 3, backgroundColor: C.textDim },
+  quickReply:        { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: C.border2 },
+  quickReplyText:    { color: C.textMuted, fontSize: 12 },
+  filePreview:       { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 16, marginBottom: 8, padding: 10, backgroundColor: "#2a2a2a", borderRadius: 10, borderWidth: 1, borderColor: C.border3 },
+  filePreviewLeft:   { flexDirection: "row", alignItems: "center", gap: 10, flex: 1, marginRight: 8 },
+  fileThumb:         { width: 36, height: 36, borderRadius: 6 },
+  fileName:          { color: C.textMid, fontSize: 13, flex: 1 },
+  inputWrap:         { paddingHorizontal: 16, paddingTop: 6, paddingBottom: 2 },
+  inputBox:          { backgroundColor: C.input, borderRadius: 12, borderWidth: 1, borderColor: C.border3, paddingHorizontal: 14, paddingVertical: 10, minHeight: 44 },
+  textInput:         { color: C.text, fontSize: 14, lineHeight: 20, maxHeight: 120 },
+  inputActions:      { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4, marginTop: 6, marginBottom: 4 },
+  actionBtn:         { width: 34, height: 34, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  actionBtnActive:   { backgroundColor: C.greenDim },
+  sendBtn:           { width: 34, height: 34, borderRadius: 8, backgroundColor: C.green, alignItems: "center", justifyContent: "center" },
+  sendBtnDisabled:   { backgroundColor: "#3a3a3a" },
+  disclaimer:        { textAlign: "center", fontSize: 10, color: C.textLabel, paddingBottom: 10, paddingTop: 2 },
 });
