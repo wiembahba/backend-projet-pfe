@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type UserRole = 'admin' | 'chef_projet' | 'employe';
@@ -22,7 +22,9 @@ interface AuthContextValue {
   isEmploye: boolean;
 }
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = Platform.OS === 'web'
+  ? 'http://localhost:5000/api'
+  : 'http://192.168.1.XX:5000/api';
 
 const storage = {
   get: (key: string): Promise<string | null> =>
@@ -53,8 +55,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const t = await storage.get('mdw-token');
         const u = await storage.get('mdw-user');
-        if (t) setToken(t);
-        if (u) setUser(JSON.parse(u));
+        if (t && u) {
+          setToken(t);
+          setUser(JSON.parse(u));
+        }
       } catch {}
       setReady(true);
     })();
@@ -65,13 +69,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
   ): Promise<{ success: boolean; role?: UserRole }> => {
     try {
-      const res  = await fetch(`${API_URL}/auth/login`, {
+      const res = await fetch(`${API_URL}/auth/login`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ email, password }),
       });
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error('Non-JSON response:', text.slice(0, 200));
+        return { success: false };
+      }
+
       const data = await res.json();
-      if (!res.ok || !data.success) return { success: false };
+
+      if (!res.ok || !data.success) {
+        console.error('Login failed:', data.message || `HTTP ${res.status}`);
+        return { success: false };
+      }
 
       const loggedUser: AuthUser = {
         id:         String(data.user.id),
@@ -87,38 +103,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(loggedUser);
       return { success: true, role: loggedUser.role };
 
-    } catch {
-      const MOCK_USERS: AuthUser[] = [
-        { id: 'U0', name: 'Admin MDW',     email: 'admin@maisonweb.com',   role: 'admin',       department: 'Direction'     },
-        { id: 'U1', name: 'Amine Belhadj', email: 'chef@maisonweb.com',    role: 'chef_projet', department: 'Développement' },
-        { id: 'U2', name: 'Sara Mansouri', email: 'employe@maisonweb.com', role: 'employe',     department: 'Développement' },
-      ];
-      if (password !== 'password') return { success: false };
-      const found = MOCK_USERS.find(u => u.email === email);
-      if (!found) return { success: false };
-
-      const mockToken = 'mock-token-' + found.role;
-      await storage.set('mdw-token', mockToken);
-      await storage.set('mdw-user',  JSON.stringify(found));
-      setToken(mockToken);
-      setUser(found);
-      return { success: true, role: found.role };
+    } catch (err) {
+      console.error('Login error:', err);
+      return { success: false };
     }
   };
 
   const logout = async (): Promise<void> => {
     const currentToken = token;
 
-    // ✅ امسح الـ storage أولاً
+    // 1. امسح storage
     await storage.remove('mdw-token');
     await storage.remove('mdw-user');
 
-    // ✅ بعدها امسح الـ state → navigator يبدل للـ AuthStack
+    // 2. صفّر state — هاد يخلي AppNavigator يروح لـ AuthStack
     setUser(null);
     setToken(null);
 
-    // ✅ بعث للـ backend في الخلفية
-    if (currentToken && !currentToken.startsWith('mock-token')) {
+    // 3. ابعت للـ API في الخلفية
+    if (currentToken) {
       fetch(`${API_URL}/auth/logout`, {
         method:  'POST',
         headers: {
@@ -129,7 +132,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  if (!ready) return null;
+  // ← شاشة تحميل بدل null
+  if (!ready) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0a0f1e', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color="#185FA5" size="large" />
+      </View>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{

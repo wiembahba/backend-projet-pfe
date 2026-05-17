@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -21,8 +21,7 @@ import TasksListScreen from '../screens/tasks/TasksListScreen';
 import CalendarScreen from '../screens/calendar/CalendarScreen';
 import TeamScreen from '../screens/team/TeamScreen';
 import RiskScreen from '../screens/risk/RiskScreen';
-import UsersListScreen from '../screens/users/UsersListScreen';
-import CreateUserScreen from '../screens/users/CreateUserScreen';
+import UsersScreen from '../screens/users/Usersscreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 import ChatWidget from '../components/ChatWidget';
@@ -30,7 +29,6 @@ import ChatWidget from '../components/ChatWidget';
 const AuthStack     = createNativeStackNavigator();
 const Tab           = createBottomTabNavigator();
 const ProjectsStack = createNativeStackNavigator();
-const UsersStack    = createNativeStackNavigator();
 
 function ProjectsNavigator() {
   return (
@@ -41,23 +39,12 @@ function ProjectsNavigator() {
   );
 }
 
-function UsersNavigator() {
-  return (
-    <UsersStack.Navigator screenOptions={{ headerShown: false }}>
-      <UsersStack.Screen name="UsersList"  component={UsersListScreen} />
-      <UsersStack.Screen name="CreateUser" component={CreateUserScreen} />
-    </UsersStack.Navigator>
-  );
-}
-
 function AppTabs() {
-  const { user, isAdmin, isChef, token } = useAuth();
+  const { isAdmin, isChef, token } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // ---- جلب عدد الإشعارات غير المقروءة ----
   useEffect(() => {
     if (!token) return;
-
     const fetchCount = async () => {
       try {
         const data = await notificationApi.getAll(token);
@@ -65,14 +52,10 @@ function AppTabs() {
         setUnreadCount(notifs.filter((n: any) => !n.lu).length);
       } catch {}
     };
-
     fetchCount();
-    const interval = setInterval(fetchCount, 30000); // كل 30 ثانية
+    const interval = setInterval(fetchCount, 30000);
     return () => clearInterval(interval);
   }, [token]);
-  // -----------------------------------------
-
-  if (!user) return null;
 
   return (
     <View style={{ flex: 1 }}>
@@ -157,7 +140,7 @@ function AppTabs() {
         {isAdmin && (
           <Tab.Screen
             name="Users"
-            component={UsersNavigator}
+            component={UsersScreen}
             options={{
               tabBarLabel: 'Utilisateurs',
               tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
@@ -165,7 +148,6 @@ function AppTabs() {
           />
         )}
 
-        {/* ---- Notifications مع البادج ---- */}
         <Tab.Screen
           name="Notifications"
           options={{
@@ -177,11 +159,8 @@ function AppTabs() {
             ),
           }}
         >
-          {() => (
-            <NotificationsScreen onCountChange={setUnreadCount} />
-          )}
+          {() => <NotificationsScreen onCountChange={setUnreadCount} />}
         </Tab.Screen>
-        {/* --------------------------------- */}
 
         <Tab.Screen
           name="Profile"
