@@ -24,7 +24,7 @@ interface AuthContextValue {
 
 const API_URL = Platform.OS === 'web'
   ? 'http://localhost:5000/api'
-  : 'http://192.168.1.XX:5000/api';
+  : 'http://172.24.175.49:5000/api';
 
 const storage = {
   get: (key: string): Promise<string | null> =>
@@ -112,15 +112,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async (): Promise<void> => {
     const currentToken = token;
 
-    // 1. امسح storage
     await storage.remove('mdw-token');
     await storage.remove('mdw-user');
 
-    // 2. صفّر state — هاد يخلي AppNavigator يروح لـ AuthStack
     setUser(null);
     setToken(null);
 
-    // 3. ابعت للـ API في الخلفية
     if (currentToken) {
       fetch(`${API_URL}/auth/logout`, {
         method:  'POST',
@@ -132,7 +129,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ← شاشة تحميل بدل null
   if (!ready) {
     return (
       <View style={{ flex: 1, backgroundColor: '#0a0f1e', alignItems: 'center', justifyContent: 'center' }}>

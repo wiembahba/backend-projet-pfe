@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -150,6 +150,7 @@ function AppTabs() {
 
         <Tab.Screen
           name="Notifications"
+          component={NotificationsScreen}
           options={{
             tabBarLabel: 'Notifications',
             tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
@@ -158,9 +159,7 @@ function AppTabs() {
               <Ionicons name="notifications-outline" size={size} color={color} />
             ),
           }}
-        >
-          {() => <NotificationsScreen onCountChange={setUnreadCount} />}
-        </Tab.Screen>
+        />
 
         <Tab.Screen
           name="Profile"
@@ -172,7 +171,7 @@ function AppTabs() {
         />
       </Tab.Navigator>
 
-      <ChatWidget />
+      {Platform.OS === 'web' && <ChatWidget />}
     </View>
   );
 }
