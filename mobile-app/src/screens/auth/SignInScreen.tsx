@@ -19,7 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 const { width: SW, height: SH } = Dimensions.get('window');
 const API_URL = Platform.OS === 'web'
   ? 'http://localhost:5000/api'
-  : 'http://172.24.175.49:5000/api';
+  : 'http://10.196.81.49:5000/api';
 
 function Orb({ x, y, size, delay, color }: {
   x: number; y: number; size: number; delay: number; color: string;

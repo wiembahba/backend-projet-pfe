@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 const BASE_URL = Platform.OS === 'web'
   ? 'http://localhost:5000/api'
-  : 'http://172.24.175.49:5000/api';
+  : 'http://10.196.81.49:5000/api';
 
 // ─── Error class ──────────────────────────────────────────────────────────────
 

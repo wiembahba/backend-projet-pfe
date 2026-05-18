@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Platform } from 'react-native';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -8,12 +8,10 @@ import { useAuth } from '../context/AuthContext';
 import { T } from '../constants/theme';
 import { notificationApi } from '../services/api';
 
-// Auth screens
 import SignInScreen from '../screens/auth/SignInScreen';
 import SignUpScreen from '../screens/auth/SignUpScreen';
 import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
 
-// App screens
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import ProjectsListScreen from '../screens/projects/ProjectsListScreen';
 import ProjectDetailScreen from '../screens/projects/ProjectDetailScreen';
@@ -171,7 +169,7 @@ function AppTabs() {
         />
       </Tab.Navigator>
 
-      {Platform.OS === 'web' && <ChatWidget />}
+      <ChatWidget />
     </View>
   );
 }

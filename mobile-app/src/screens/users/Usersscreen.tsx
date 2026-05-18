@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, SafeAreaView, TouchableOpacity,
   ScrollView, TextInput, ActivityIndicator,
@@ -162,6 +162,285 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
         {label}
       </Text>
       {children}
+    </View>
+  );
+}
+
+// ─── DatePickerField ─────────────────────────────────────────────────────────
+// Affiche un sélecteur inline Jour / Mois / Année sans dépendance externe.
+// La valeur est toujours un string ISO "AAAA-MM-JJ" ou "".
+
+const MONTHS_FR = [
+  'Janvier','Février','Mars','Avril','Mai','Juin',
+  'Juillet','Août','Septembre','Octobre','Novembre','Décembre',
+];
+
+function parseISODate(iso: string): { d: number; m: number; y: number } | null {
+  if (!iso || iso.length < 10) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return { d, m, y };
+}
+
+function daysInMonth(month: number, year: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+interface DatePickerFieldProps {
+  value:     string;          // "AAAA-MM-JJ" | ""
+  onChange:  (v: string) => void;
+  minYear?:  number;
+  maxYear?:  number;
+  label?:    string;
+}
+
+function DatePickerField({
+  value,
+  onChange,
+  minYear = 1940,
+  maxYear = new Date().getFullYear(),
+}: DatePickerFieldProps) {
+  const parsed = parseISODate(value);
+  const [day,   setDay]   = useState<number>(parsed?.d ?? 0);
+  const [month, setMonth] = useState<number>(parsed?.m ?? 0);
+  const [year,  setYear]  = useState<number>(parsed?.y ?? 0);
+  const [open,  setOpen]  = useState(false);
+
+  // Sync internal ↔ external quand la valeur change depuis l'extérieur
+  useEffect(() => {
+    const p = parseISODate(value);
+    if (p) { setDay(p.d); setMonth(p.m); setYear(p.y); }
+    else   { setDay(0);   setMonth(0);   setYear(0); }
+  }, [value]);
+
+  // Émet la valeur ISO quand les 3 parties sont renseignées
+  const emit = (d: number, m: number, y: number) => {
+    if (d && m && y) {
+      const maxD = daysInMonth(m, y);
+      const safeD = Math.min(d, maxD);
+      onChange(`${y}-${String(m).padStart(2,'0')}-${String(safeD).padStart(2,'0')}`);
+      if (safeD !== d) setDay(safeD);
+    } else {
+      onChange('');
+    }
+  };
+
+  const handleDay   = (v: number) => { setDay(v);   emit(v, month, year); };
+  const handleMonth = (v: number) => { setMonth(v); emit(day, v, year);   };
+  const handleYear  = (v: number) => { setYear(v);  emit(day, month, v);  };
+
+  const clearAll = () => {
+    setDay(0); setMonth(0); setYear(0);
+    onChange('');
+  };
+
+  // Génère les listes
+  const years  = Array.from({ length: maxYear - minYear + 1 }, (_, i) => maxYear - i);
+  const maxD   = (month && year) ? daysInMonth(month, year) : 31;
+  const days   = Array.from({ length: maxD }, (_, i) => i + 1);
+
+  // Label affiché sur le bouton
+  const displayLabel = (day && month && year)
+    ? `${String(day).padStart(2,'0')} ${MONTHS_FR[month - 1]} ${year}`
+    : 'Sélectionner une date';
+
+  const hasValue = !!(day && month && year);
+
+  return (
+    <View>
+      {/* Bouton trigger */}
+      <TouchableOpacity
+        onPress={() => setOpen(o => !o)}
+        activeOpacity={0.7}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: 'rgba(255,255,255,0.05)',
+          borderWidth: 1,
+          borderColor: open ? 'rgba(99,179,237,0.45)' : 'rgba(99,179,237,0.15)',
+          borderRadius: 10,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Ionicons name="calendar-outline" size={15} color={hasValue ? T.blue : T.muted} />
+          <Text style={{ fontSize: 13, color: hasValue ? T.pri : T.muted }}>
+            {displayLabel}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {hasValue && (
+            <TouchableOpacity
+              onPress={e => { e.stopPropagation?.(); clearAll(); }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="close-circle" size={16} color={T.muted} />
+            </TouchableOpacity>
+          )}
+          <Ionicons
+            name={open ? 'chevron-up' : 'chevron-down'}
+            size={14}
+            color={T.muted}
+          />
+        </View>
+      </TouchableOpacity>
+
+      {/* Sélecteurs inline (3 colonnes) */}
+      {open && (
+        <View style={{
+          marginTop: 6,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: 'rgba(99,179,237,0.18)',
+          backgroundColor: 'rgba(13,27,62,0.98)',
+          overflow: 'hidden',
+        }}>
+          {/* En-têtes colonnes */}
+          <View style={{
+            flexDirection: 'row',
+            borderBottomWidth: 1,
+            borderBottomColor: 'rgba(255,255,255,0.07)',
+            paddingVertical: 6,
+          }}>
+            {['Jour', 'Mois', 'Année'].map(h => (
+              <View key={h} style={{ flex: h === 'Mois' ? 2 : 1, alignItems: 'center' }}>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: T.blue, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  {h}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Listes déroulantes */}
+          <View style={{ flexDirection: 'row', height: 180 }}>
+            {/* Jours */}
+            <ScrollView
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+            >
+              {days.map(d => (
+                <TouchableOpacity
+                  key={d}
+                  onPress={() => handleDay(d)}
+                  activeOpacity={0.7}
+                  style={{
+                    paddingVertical: 9,
+                    alignItems: 'center',
+                    backgroundColor: day === d ? 'rgba(29,111,216,0.25)' : 'transparent',
+                    borderRadius: 6,
+                    marginHorizontal: 4,
+                    marginVertical: 1,
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 13,
+                    fontWeight: day === d ? '700' : '400',
+                    color: day === d ? T.blue : T.sec,
+                  }}>
+                    {String(d).padStart(2, '0')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Séparateur */}
+            <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.07)' }} />
+
+            {/* Mois */}
+            <ScrollView
+              style={{ flex: 2 }}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+            >
+              {MONTHS_FR.map((name, i) => {
+                const m = i + 1;
+                return (
+                  <TouchableOpacity
+                    key={m}
+                    onPress={() => handleMonth(m)}
+                    activeOpacity={0.7}
+                    style={{
+                      paddingVertical: 9,
+                      paddingHorizontal: 8,
+                      alignItems: 'center',
+                      backgroundColor: month === m ? 'rgba(29,111,216,0.25)' : 'transparent',
+                      borderRadius: 6,
+                      marginHorizontal: 4,
+                      marginVertical: 1,
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: 13,
+                      fontWeight: month === m ? '700' : '400',
+                      color: month === m ? T.blue : T.sec,
+                    }}>
+                      {name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Séparateur */}
+            <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.07)' }} />
+
+            {/* Années */}
+            <ScrollView
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+            >
+              {years.map(yr => (
+                <TouchableOpacity
+                  key={yr}
+                  onPress={() => handleYear(yr)}
+                  activeOpacity={0.7}
+                  style={{
+                    paddingVertical: 9,
+                    alignItems: 'center',
+                    backgroundColor: year === yr ? 'rgba(29,111,216,0.25)' : 'transparent',
+                    borderRadius: 6,
+                    marginHorizontal: 4,
+                    marginVertical: 1,
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 13,
+                    fontWeight: year === yr ? '700' : '400',
+                    color: year === yr ? T.blue : T.sec,
+                  }}>
+                    {yr}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Bouton Confirmer */}
+          <TouchableOpacity
+            onPress={() => setOpen(false)}
+            activeOpacity={0.7}
+            style={{
+              margin: 10,
+              paddingVertical: 10,
+              borderRadius: 10,
+              backgroundColor: (day && month && year) ? '#1d4ed8' : 'rgba(255,255,255,0.07)',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{
+              fontSize: 13,
+              fontWeight: '700',
+              color: (day && month && year) ? '#fff' : T.muted,
+            }}>
+              {(day && month && year) ? `✓ Confirmer` : 'Sélectionnez une date'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -342,15 +621,17 @@ function UserFormModal({
 
               {form.__showPersonnel === '1' && (
                 <View style={{ marginTop: 8 }}>
+
+                  {/* ── Date de naissance ── */}
                   <Field label="Date de naissance">
-                    <TextInput
-                      style={IS}
+                    <DatePickerField
                       value={form.date_naissance}
-                      onChangeText={v => set('date_naissance', v)}
-                      placeholder="AAAA-MM-JJ"
-                      placeholderTextColor={T.muted}
+                      onChange={v => set('date_naissance', v)}
+                      minYear={1940}
+                      maxYear={new Date().getFullYear() - 18}
                     />
                   </Field>
+
                   <Field label="Lieu de naissance">
                     <TextInput
                       style={IS}
@@ -360,6 +641,7 @@ function UserFormModal({
                       placeholderTextColor={T.muted}
                     />
                   </Field>
+
                   <Field label="Genre">
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       {['Homme', 'Femme', 'Autre'].map(g => {
@@ -384,6 +666,7 @@ function UserFormModal({
                       })}
                     </View>
                   </Field>
+
                   <Field label="Situation familiale">
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                       {['Célibataire', 'Marié(e)', 'Divorcé(e)', 'Veuf/Veuve'].map(s => {
@@ -408,6 +691,7 @@ function UserFormModal({
                       })}
                     </View>
                   </Field>
+
                   <Field label="Nombre d'enfants">
                     <TextInput
                       style={IS}
@@ -418,6 +702,7 @@ function UserFormModal({
                       keyboardType="numeric"
                     />
                   </Field>
+
                   <Field label="Adresse">
                     <TextInput
                       style={IS}
@@ -427,6 +712,7 @@ function UserFormModal({
                       placeholderTextColor={T.muted}
                     />
                   </Field>
+
                   <Field label="Ville">
                     <TextInput
                       style={IS}
@@ -436,6 +722,7 @@ function UserFormModal({
                       placeholderTextColor={T.muted}
                     />
                   </Field>
+
                   <Field label="Wilaya">
                     <TextInput
                       style={IS}
@@ -445,6 +732,7 @@ function UserFormModal({
                       placeholderTextColor={T.muted}
                     />
                   </Field>
+
                   <Field label="Code postal">
                     <TextInput
                       style={IS}
@@ -455,15 +743,17 @@ function UserFormModal({
                       keyboardType="numeric"
                     />
                   </Field>
+
+                  {/* ── Date d'embauche ── */}
                   <Field label="Date d'embauche">
-                    <TextInput
-                      style={IS}
+                    <DatePickerField
                       value={form.date_embauche}
-                      onChangeText={v => set('date_embauche', v)}
-                      placeholder="AAAA-MM-JJ"
-                      placeholderTextColor={T.muted}
+                      onChange={v => set('date_embauche', v)}
+                      minYear={2000}
+                      maxYear={new Date().getFullYear()}
                     />
                   </Field>
+
                   <Field label="Matricule">
                     <TextInput
                       style={IS}

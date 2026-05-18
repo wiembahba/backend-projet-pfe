@@ -9,9 +9,10 @@ import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 
-const API = "http://localhost:5000/api/chatbot";
+const API = Platform.OS === "web"
+  ? "http://localhost:5000/api/chatbot"
+  : "http://10.196.81.49:5000/api/chatbot";
 
-// ─── Design tokens ─────────────────────────────────────────
 const C = {
   bg:        "#212121",
   sidebar:   "#171717",
@@ -32,7 +33,6 @@ const C = {
   white:     "#ececec",
 };
 
-// ─── Markdown inline bold ───────────────────────────────────
 function MarkdownText({ text, isError }: { text: string; isError?: boolean }) {
   const baseColor = isError ? C.error : C.text;
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
@@ -47,7 +47,6 @@ function MarkdownText({ text, isError }: { text: string; isError?: boolean }) {
   );
 }
 
-// ─── Helpers ────────────────────────────────────────────────
 function formatSessionDate(dateStr?: string): string {
   if (!dateStr) return "";
   const d = new Date(dateStr);
@@ -57,11 +56,11 @@ function formatSessionDate(dateStr?: string): string {
   if (diff < 86400000) return `Il y a ${Math.floor(diff / 3600000)} h`;
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
 }
+
 function formatTime(date?: Date): string {
   return date?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) || "";
 }
 
-// ─── Types ──────────────────────────────────────────────────
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -69,6 +68,7 @@ interface Message {
   isError?: boolean;
   imagePreview?: string | null;
 }
+
 interface Session {
   id?: string; sessionId?: string; title?: string;
   updatedAt?: string; createdAt?: string;
@@ -76,7 +76,6 @@ interface Session {
 
 const QUICK_REPLIES = ["Projets en cours ?", "Tâches en retard ?", "Avancement global ?", "Liste de l'équipe ?"];
 
-// ─── Typing dots ─────────────────────────────────────────────
 function TypingDots() {
   return (
     <View style={s.typingRow}>
@@ -90,7 +89,6 @@ function TypingDots() {
   );
 }
 
-// ─── Main widget ─────────────────────────────────────────────
 export default function ChatWidget() {
   const { token } = useAuth();
   const [isOpen, setIsOpen]               = useState(false);
@@ -126,7 +124,6 @@ export default function ChatWidget() {
   const addMessage = (msg: Omit<Message, "timestamp">) =>
     setMessages(prev => [...prev, { timestamp: new Date(), ...msg }]);
 
-  // ─── Sessions ──────────────────────────────────────────────
   const loadSessionsList = useCallback(async () => {
     if (!sessionsAvailable || !token) return;
     setSessionsLoading(true);
@@ -180,7 +177,6 @@ export default function ChatWidget() {
     return true;
   };
 
-  // ─── Send message ───────────────────────────────────────────
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || isLoading || !checkToken()) return;
@@ -203,7 +199,6 @@ export default function ChatWidget() {
     finally { setIsLoading(false); }
   };
 
-  // ─── Send document ──────────────────────────────────────────
   const sendDocument = async () => {
     if (!uploadedFile || isUploading || !checkToken()) return;
     const sessionId = await ensureSession();
@@ -225,7 +220,6 @@ export default function ChatWidget() {
     finally { setUploadedFile(null); setIsUploading(false); setIsLoading(false); }
   };
 
-  // ─── Send image ─────────────────────────────────────────────
   const sendImage = async () => {
     if (!uploadedImage || isUploading || !checkToken()) return;
     const sessionId = await ensureSession();
@@ -246,11 +240,11 @@ export default function ChatWidget() {
     finally { setUploadedImage(null); setImagePreview(null); setIsUploading(false); setIsLoading(false); }
   };
 
-  // ─── Pickers ────────────────────────────────────────────────
   const pickDocument = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: ["application/pdf", "application/msword", "text/plain"] });
     if (!result.canceled && result.assets?.[0]) { setUploadedFile(result.assets[0]); setUploadedImage(null); setImagePreview(null); }
   };
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
     if (!result.canceled && result.assets?.[0]) {
@@ -316,22 +310,18 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* ── FAB Button ── */}
       <TouchableOpacity style={s.fab} onPress={() => setIsOpen(o => !o)} activeOpacity={0.85}>
         <Ionicons name={isOpen ? "close" : "chatbubble-ellipses"} size={24} color="#fff" />
       </TouchableOpacity>
 
-      {/* ── Chat Modal ── */}
       <Modal visible={isOpen} animationType="slide" transparent={false} onRequestClose={() => setIsOpen(false)}>
         <SafeAreaView style={s.modalRoot}>
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
 
-            {/* Sidebar overlay */}
             {isSidebarOpen && (
               <TouchableOpacity style={s.sidebarOverlay} activeOpacity={1} onPress={() => setIsSidebarOpen(false)} />
             )}
 
-            {/* Sidebar drawer */}
             {isSidebarOpen && (
               <View style={s.sidebarDrawer}>
                 <View style={s.sidebarBrand}>
@@ -386,7 +376,6 @@ export default function ChatWidget() {
               </View>
             )}
 
-            {/* Header */}
             <View style={s.header}>
               <TouchableOpacity onPress={() => setIsSidebarOpen(true)} style={s.headerBtn}>
                 <Ionicons name="menu" size={20} color={C.textMid} />
@@ -400,7 +389,6 @@ export default function ChatWidget() {
               </TouchableOpacity>
             </View>
 
-            {/* Messages */}
             <FlatList
               ref={flatListRef}
               data={messages}
@@ -424,7 +412,6 @@ export default function ChatWidget() {
               }
             />
 
-            {/* File preview */}
             {(uploadedFile || uploadedImage) && (
               <View style={s.filePreview}>
                 <View style={s.filePreviewLeft}>
@@ -441,7 +428,6 @@ export default function ChatWidget() {
               </View>
             )}
 
-            {/* Input */}
             <View style={s.inputWrap}>
               <View style={s.inputBox}>
                 <TextInput
@@ -477,7 +463,6 @@ export default function ChatWidget() {
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────
 const s = StyleSheet.create({
   fab:               { position: "absolute", bottom: 80, right: 20, width: 52, height: 52, borderRadius: 26, backgroundColor: C.green, alignItems: "center", justifyContent: "center", zIndex: 999, elevation: 8, shadowColor: C.green, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8 },
   modalRoot:         { flex: 1, backgroundColor: C.bg },
